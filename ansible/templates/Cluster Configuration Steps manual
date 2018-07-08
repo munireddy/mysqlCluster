@@ -1,0 +1,160 @@
+
+dba.checkInstanceConfiguration('cadmin1:passw0rd@ip-172-31-33-20:3306'
+dba.configureInstance('cadmin1:passw0rd@ip-172-31-33-20:3306',{'restart': true, 'interactive': false})
+
+######################################################3
+
+ MySQL  JS > shell.connect('cadmin3:passw0rd@ip-172-31-22-98:3306')
+Creating a session to 'cadmin3@ip-172-31-22-98:3306'
+Fetching schema names for autocompletion... Press ^C to stop.
+Your MySQL connection id is 29
+Server version: 8.0.11 MySQL Community Server - GPL
+No default schema selected; type \use <schema> to set one.
+<ClassicSession:cadmin3@ip-172-31-22-98:3306>
+
+#################################
+ MySQL  ip-172-31-22-98:3306 ssl  JS > dba.checkInstanceConfiguration()
+Validating local MySQL instance listening at port 3306 for use in an InnoDB cluster...
+
+This instance reports its own address as ip-172-31-22-98
+Clients and other cluster members will communicate with it through this address by default. If this is not correct, the report_host MySQL system variable should be changed.
+
+Checking whether existing tables comply with Group Replication requirements...
+No incompatible tables detected
+
+Checking instance configuration...
+
+Some configuration options need to be fixed:
++--------------------------+---------------+----------------+--------------------------------------------------+
+| Variable                 | Current Value | Required Value | Note                                             |
++--------------------------+---------------+----------------+--------------------------------------------------+
+| binlog_checksum          | CRC32         | NONE           | Update the server variable                       |
+| enforce_gtid_consistency | OFF           | ON             | Update read-only variable and restart the server |
+| gtid_mode                | OFF           | ON             | Update read-only variable and restart the server |
+| server_id                | 1             | <unique ID>    | Update read-only variable and restart the server |
++--------------------------+---------------+----------------+--------------------------------------------------+
+
+Please use the dba.configureInstance() command to repair these issues.
+
+{
+    "config_errors": [
+        {
+            "action": "server_update", 
+            "current": "CRC32", 
+            "option": "binlog_checksum", 
+            "required": "NONE"
+        },
+        {
+            "action": "restart", 
+            "current": "OFF", 
+            "option": "enforce_gtid_consistency", 
+            "required": "ON"
+        },
+        {
+            "action": "restart", 
+            "current": "OFF", 
+            "option": "gtid_mode", 
+            "required": "ON"
+        },
+        {
+            "action": "restart", 
+            "current": "1", 
+            "option": "server_id", 
+            "required": "<unique ID>"
+        }
+    ], 
+    "errors": [], 
+    "status": "error"
+}
+
+
+##################################
+
+ MySQL  ip-172-31-22-98:3306 ssl  JS > dba.configureInstance()
+Configuring local MySQL instance listening at port 3306 for use in an InnoDB cluster...
+
+This instance reports its own address as ip-172-31-22-98
+Clients and other cluster members will communicate with it through this address by default. If this is not correct, the report_host MySQL system variable should be changed.
+
+Some configuration options need to be fixed:
++--------------------------+---------------+----------------+--------------------------------------------------+
+| Variable                 | Current Value | Required Value | Note                                             |
++--------------------------+---------------+----------------+--------------------------------------------------+
+| binlog_checksum          | CRC32         | NONE           | Update the server variable                       |
+| enforce_gtid_consistency | OFF           | ON             | Update read-only variable and restart the server |
+| gtid_mode                | OFF           | ON             | Update read-only variable and restart the server |
+| server_id                | 1             | <unique ID>    | Update read-only variable and restart the server |
++--------------------------+---------------+----------------+--------------------------------------------------+
+
+Do you want to perform the required configuration changes? [y/n]: y
+Do you want to restart the instance after configuring it? [y/n]: y
+Configuring instance...
+The instance 'ip-172-31-22-98:3306' was configured for cluster usage.
+Restarting MySQL...
+MySQL server at ip-172-31-22-98:3306 was restarted.
+
+
+#################################
+MySQL  ip-172-31-22-98:3306 ssl  JS > dba.checkInstanceConfiguration()
+Validating local MySQL instance listening at port 3306 for use in an InnoDB cluster...
+
+This instance reports its own address as ip-172-31-22-98
+Clients and other cluster members will communicate with it through this address by default. If this is not correct, the report_host MySQL system variable should be changed.
+
+Checking whether existing tables comply with Group Replication requirements...
+No incompatible tables detected
+
+Checking instance configuration...
+Instance configuration is compatible with InnoDB cluster
+
+The instance 'ip-172-31-22-98:3306' is valid for InnoDB cluster usage.
+
+{
+    "status": "ok"
+}
+
+###################################
+ MySQL  ip-172-31-22-98:3306 ssl  JS > var cluster = dba.createCluster('testCluster')
+A new InnoDB cluster will be created on instance 'cadmin3@ip-172-31-22-98:3306'.
+
+Validating instance at ip-172-31-22-98:3306...
+
+This instance reports its own address as ip-172-31-22-98
+
+Instance configuration is suitable.
+Creating InnoDB cluster 'testCluster' on 'cadmin3@ip-172-31-22-98:3306'...
+Adding Seed Instance...
+
+Cluster successfully created. Use Cluster.addInstance() to add MySQL instances.
+At least 3 instances are needed for the cluster to be able to withstand up to
+one server failure.
+
+
+
+###################################
+
+ MySQL  ip-172-31-22-98:3306 ssl  JS > cluster.status()
+{
+    "clusterName": "testCluster", 
+    "defaultReplicaSet": {
+        "name": "default", 
+        "primary": "ip-172-31-22-98:3306", 
+        "ssl": "REQUIRED", 
+        "status": "OK_NO_TOLERANCE", 
+        "statusText": "Cluster is NOT tolerant to any failures.", 
+        "topology": {
+            "ip-172-31-22-98:3306": {
+                "address": "ip-172-31-22-98:3306", 
+                "mode": "R/W", 
+                "readReplicas": {}, 
+                "role": "HA", 
+                "status": "ONLINE"
+            }
+        }
+    }, 
+    "groupInformationSourceMember": "mysql://cadmin3@ip-172-31-22-98:3306"
+}
+
+
+###################################
+

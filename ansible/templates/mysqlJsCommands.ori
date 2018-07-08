@@ -1,0 +1,6 @@
+dba.verbose=2
+shell.connect('cadmin1:passw0rd@ip-172-31-20-203:3306')
+dba.configureInstance('cadmin1:passw0rd@ip-172-31-20-203:3306',{'restart': true, 'interactive': false})
+var cluster = dba.createCluster('testCluster')
+cluster.status()
+

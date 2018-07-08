@@ -1,0 +1,195 @@
+---
+- hosts: "{{mysql_node_host_name}}"
+  vars_files:
+    - vars/main.yml
+  tasks:
+  - name: Install the iptable package
+    become: yes
+    package:
+      name: iptables
+      state: latest
+
+  - name: Add 3306 port
+    become: yes
+    iptables:
+       chain: INPUT
+       protocol: tcp
+       destination_port: 3306
+
+  - name: Add 33061 port
+    become: yes
+    iptables:
+       chain: INPUT
+       protocol: tcp
+       destination_port: 33061
+
+  - name: save ip tables
+    become: yes
+    command: iptables-save
+
+  - name: export front end
+    become: yes
+    shell: export DEBIAN_FRONTEND=noninteractive
+
+  - name: Install python-mysql libraries
+    become: yes
+    apt: name=python-mysqldb update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Download mysql cluster pacakges with check md5
+    get_url:
+      url: https://dev.mysql.com/get/{{mysql_package_name}}
+      dest: /home/ubuntu/{{mysql_package_name}}
+
+  - name:  Set mysql root password
+    become: yes
+    debconf: name='mysql-community-server' question='mysql-community-server/root-pass' value='{{mysql_password | quote}}' vtype='password'
+
+  - name:  Confirm mysql root password
+    become: yes
+    debconf: name='mysql-community-server' question='mysql-community-server/re-root-pass' value='{{mysql_password | quote}}' vtype='password'
+
+  - name: Select Product
+    become: yes
+    debconf:
+      name: mysql-apt-config
+      question: mysql-apt-config/select-product
+      value: Ok
+      vtype: select
+
+  - name: Select Auth
+    become: yes
+    debconf:
+      name: mysql-community-server
+      question: mysql-server/default-auth-override
+      value: Use Strong Password Encryption (RECOMMENDED)
+      vtype: select
+
+  - name: dmr warning
+    become: yes
+    debconf:
+      name: mysql-community-server
+      question: mysql-community-server/data-dir
+      value: Ok
+      vtype: note
+
+  - name: Unpack the cluster packages
+    become: yes
+    apt:
+      deb: '{{mysql_package_name}}'
+
+
+
+  - name: Update system
+    become: yes
+    command: apt update
+
+
+  - name: Install mysql-server
+    become: yes
+    apt: name=mysql-server update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Install mysql-shell
+    become: yes
+    apt: name=mysql-shell update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Install mysql-router
+    become: yes
+    apt: name=mysql-router update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Install mysql clinet for MySQL client  libraries
+    become: yes
+    apt: name=libmysqlclient-dev update_cache=yes cache_valid_time=3600 state=present
+
+  - name: Install python pip
+    become: yes
+    apt: name=python-pip update_cache=yes cache_valid_time=3600 state=present
+
+
+  - name: Update system
+    become: yes
+    command: apt update
+
+  - name:  insert mysql password
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: 'password=passw0rd'
+      insertbefore: BOF
+
+  - name: insert mysql user
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: 'user=root'
+      insertbefore: BOF
+
+  - name: insert mysql tag
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: '[mysql]'
+      insertbefore: BOF
+
+  - name: insert mysqld timeout
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: 'connect_timeout=120'
+      insertbefore: BOF
+
+  - name: insert mysqld tag
+    become: yes
+    lineinfile:
+      destfile: /etc/mysql/my.cnf
+      line: '[mysqld]'
+      insertbefore: BOF
+
+
+
+  - name: Copy mysqld config file
+    become: yes
+    template: src=myconf1.cnf dest=/etc/mysql/mysql.conf.d/mysqld.cnf  owner=root mode=0600
+
+
+  - name: Copy mysql credentail config file
+    become: yes
+    template: src=my.cnf dest=/home/ubuntu/.my.cnf  owner=root mode=0600
+  
+  - name: Copy  mysql Script to alter the user
+    become: yes
+    template: src=mysqlScript.sh dest=/home/ubuntu/mysqlScript.sh  owner=root mode=0777
+  
+  - name: Copy mysqlShellJsCommand for configuring the cluster
+    become: yes
+    template: src=mysqlJsCommands dest=/home/ubuntu/mysqlJsCommands  owner=root mode=0777
+
+  - name: Copy file2 for configuring the cluster
+    become: yes
+    template: src=file2 dest=/home/ubuntu/file2  owner=root mode=0777
+
+  - name: execute mysql script to alter the plugin module 
+    become: yes
+    shell: /home/ubuntu/mysqlScript.sh  >> log.txt
+
+  - name: create users
+    mysql_user:
+        login_user: "{{mysql_login_userid}}"
+        login_password: "{{mysql_login_password}}"
+        name: "{{mysql_admin_account_userid}}"
+        password: "{{mysql_admin_account_password}}"
+        priv: '*.*:ALL,GRANT'
+        host: "{{mysql_domain}}"
+        state: present
+
+  - name: Configure Cluster1
+    become: yes
+    shell: mysqlsh  -f mysqlJsCommands
+
+
+
+
+

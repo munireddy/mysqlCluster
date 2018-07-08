@@ -1,0 +1,6 @@
+dba.verbose=2
+shell.connect('{{mysql_admin_account_userid}}:{{mysql_admin_account_password}}@{{mysql_domain_prefix}}:3306')
+dba.configureInstance('{{mysql_admin_account_userid}}:{{mysql_admin_account_password}}@{{mysql_domain_prefix}}:3306',{'restart': true, 'interactive': false})
+var cluster = dba.createCluster('testCluster')
+cluster.status()
+
